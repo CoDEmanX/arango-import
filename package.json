@@ -1,0 +1,32 @@
+{
+  "name": "arango-import",
+  "version": "1.0.0",
+  "description": "Read from MySQL source and import into ArangoDB via HTTP interface",
+  "scripts": {},
+  "keywords": [
+    "ArangoDB",
+    "MySQL",
+    "import",
+	"stream",
+	"REST"
+  ],
+  "author": "CoDEmanX",
+  "homepage": "https://github.com/CoDEmanX/arango-import",
+  "repository": {
+    "type": "git",
+    "url": "git://github.com/CoDEmanX/arango-import.git"
+  },
+  "bugs": {
+    "url": "http://github.com/CoDEmanX/arango-import/issues"
+  },
+  "license": "ISC",
+  "dependencies": {
+    "arango": "^1.2.2",
+    "mysql": "^2.5.2"
+  }
+  "files": [
+    "array_buffer.js",
+    "stream_array_buffer.js",
+    "stream_str_concat.js"
+  ]
+}
