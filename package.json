@@ -7,8 +7,8 @@
     "ArangoDB",
     "MySQL",
     "import",
-	"stream",
-	"REST"
+    "stream",
+    "REST"
   ],
   "author": "CoDEmanX",
   "homepage": "https://github.com/CoDEmanX/arango-import",
@@ -23,7 +23,7 @@
   "dependencies": {
     "arango": "^1.2.2",
     "mysql": "^2.5.2"
-  }
+  },
   "files": [
     "array_buffer.js",
     "stream_array_buffer.js",
