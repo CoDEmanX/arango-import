@@ -5,7 +5,7 @@ var arango = require('arango');
 var stream = require('stream');
 var util = require('util');
 
-var stream;
+// Transform stream
 
 function EncodeJSON(options) {
 	if (!(this instanceof EncodeJSON)) {
@@ -18,7 +18,6 @@ function EncodeJSON(options) {
 	// set properties here, this.foo = ...
 }
 util.inherits(EncodeJSON, stream.Transform);
-
 
 EncodeJSON.prototype._transform = function(obj, enc, cb) {
 	var self = this;
@@ -38,21 +37,22 @@ EncodeJSON.prototype._transform = function(obj, enc, cb) {
 	cb();
 };
 
-function quit() {
-	console.timeEnd("exchange");
-	process.exit();
-}
-var str = "";
 
-function importArango(json, finish) {
-	if (docs.length < 1000 && !finish) {
+var str = "";
+var c = 0;
+
+function importArango(json, cb) {
+	if (json) {
 		str += json + "\n";
-	} else {
+		c++;
+	}
+		
+	// buffer approx. 16 MB
+	if (c >= 1000 || !json) {
+		c = 0;
 		stream.pause();
-		// NOTE: collection and docs appear after import is finished,
-		// seems to be related to string concatenation...
 		db.import.importJSONData(
-			"fa_stammdaten_stream",
+			"fa_stammdaten_stream_str_concat",
 			str,
 			{
 				createCollection: true,
@@ -64,60 +64,28 @@ function importArango(json, finish) {
 				}
 				str = "";
 				stream.resume();
-				if (finish) quit();
+				cb();
 			}
 		);
 	}
 }
 
+function noop(){}
 
 var encoder = new EncodeJSON();
 
 encoder
-  .on('readable', function () {
-	importArango(encoder.read(), false);
-  })
-  .on('finish', function () {
-	// write rest
-    importArango(encoder.read(), true);
-  });
+	.on('readable', function() {
+		importArango(encoder.read(), noop);
+	})
+	.on('end', function() {
+		// write rest
+		importArango("", function() {
+			console.timeEnd("exchange");
+			process.exit();
+		});
+	});
 
-
-
-/*
-var doc = [];
-function processRow(row, connection) {
-	if (docs.length < 1000) {
-	
-		// Duplicate primary key (and remove original pair later),
-		// casting to string is required (_key is a string in ArangoDB!)
-		row._key = "" + row.findex;
-		
-		docs.push(row);
-	} else {
-	    connection.pause();
-		db.import.importJSONData(
-			"fa_stammdaten",
-			JSON.stringify(docs, function(key, value) {
-				// ignore "findex" key and keys with value null, undefined or whitespace only
-				if (value == null || key === "findex" || (typeof value === "string" && !value.trim())) {
-					return undefined;
-				} else {
-					return value;
-				}
-			}),
-			{
-				createCollection: true,
-				waitForSync: false
-			},
-			function(err, ret) {
-				connection.resume();
-				docs = [];
-			}
-		);
-	}
-}
-*/
 
 var connection = mysql.createConnection({
 	host: 'localhost',
@@ -132,26 +100,5 @@ connection.connect();
 
 var query = connection.query('SELECT * FROM _import_mysql.fa_stammdaten');
 
-stream = query.stream();
+var stream = query.stream();
 stream.pipe(encoder);
-
-/*
-	.on('error', function(err) {
-		console.log(err);
-	})
-	.on('fields', function(fields) {
-		//console.log(fields);
-	})
-	.on('result', function(row) {
-		i++;
-		if (i % 1000 == 0) console.log(i);
-		
-		processRow(row, connection);
-		
-	})
-	.on('end', function() {
-		console.log("end");
-		console.timeEnd("exchange");
-		process.exit();
-	});
-*/
