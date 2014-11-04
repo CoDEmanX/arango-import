@@ -47,8 +47,9 @@ function importArango(json, cb) {
 		c++;
 	}
 		
-	// buffer approx. 16 MB
-	if (c >= 1000 || !json) {
+	//if (c >= 1000 || !json) {
+	// buffer approx. 5 MB
+	if (str.length > 5000000 || !json) {
 		c = 0;
 		stream.pause();
 		db.import.importJSONData(
