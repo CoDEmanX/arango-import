@@ -2,49 +2,7 @@ console.time("exchange");
 
 var mysql = require('mysql');
 var arango = require('arango');
-var stream = require('stream');
-var util = require('util');
-
-
-// Transform stream
-
-function EncodeJSON(options) {
-	if (!options) options = {};
-	options.objectMode = true;
-	
-	if (!(this instanceof EncodeJSON)) {
-		return new EncodeJSON(options);
-	}
-	
-	stream.Transform.call(this, options);
-	// set properties here, this.foo = ...
-}
-util.inherits(EncodeJSON, stream.Transform);
-
-EncodeJSON.prototype._transform = function(obj, enc, cb) {
-	var self = this;
-	
-	if (!obj) {
-		this.push(null);
-		cb();
-		return;
-	}
-	
-	// process obj here
-	obj._key = "" + obj.findex;
-
-	this.push(JSON.stringify(obj, function(key, value) {
-			// ignore "findex" key and keys with value null, undefined or whitespace only
-			if (value == null || key === "findex" || (typeof value === "string" && !value.trim())) {
-				return undefined;
-			} else {
-				return value;
-			}
-		}
-	));
-	cb();
-};
-
+var json_transform = require('./json_transform_stream');
 
 var docs = [];
 
@@ -60,7 +18,7 @@ function importArango(json, cb) {
 		stream.pause();
 		db.import.importJSONData(
 			"fa_stammdaten_stream_array_join",
-			docs.join("\n"),
+			docs.join(""),
 			{
 				createCollection: true,
 				waitForSync: false
@@ -78,7 +36,7 @@ function importArango(json, cb) {
 }
 
 
-var encoder = new EncodeJSON();
+var encoder = new json_transform.stream();
 
 encoder
 	.on('readable', function () {

@@ -2,10 +2,9 @@ console.time("exchange");
 
 var mysql = require('mysql');
 var arango = require('arango');
-var stream = require('stream');
-var util = require('util');
 var child_process = require('child_process');
 var async = require("async");
+var json_transform = require('./json_transform_stream');
 
 var source = "_import_mysql.fa_stammdaten";
 var num_jobs = 4;
@@ -27,51 +26,6 @@ var args = [
 
 // set path to arangodb binaries here
 process.chdir("D:/Webserver/arangodb/bin");
-
-
-// Transform stream
-
-function EncodeJSON(options) {
-	if (!options) options = {};
-	options.objectMode = true;
-	
-	if (!(this instanceof EncodeJSON)) {
-		return new EncodeJSON(options);
-	}
-	
-	stream.Transform.call(this, options);
-	// set properties here, this.foo = ...
-}
-util.inherits(EncodeJSON, stream.Transform);
-
-EncodeJSON.prototype._transform = function(obj, enc, cb) {
-	var self = this;
-	
-	if (!obj) {
-		this.push(null);
-		cb();
-		return;
-	}
-	
-	// process obj here (e.g. make primary key to arango _key)
-	obj._key = "" + obj.findex;
-
-	this.push(JSON.stringify(obj, function(key, value) {
-			if (value == null || // ignore NULL'd values
-				key === "findex" || // ignore a certain key
-				(typeof value === "string" && !value.trim())) // ignore if whitespace only
-			{
-				return undefined;
-			} else {
-				return value;
-			}
-		}
-	) + "\n");
-	// important: arangoimp expects line break after document,
-	// or it will assume an array otherwise (and import thus fail).
-	// string cancat is 4-5% faster than a second call to push().
-	cb();
-};
 
 
 function getRecordCount(callback) {
@@ -131,8 +85,7 @@ function migrate(offset, callback) {
             callback();
         });
 
-    var encoder = new EncodeJSON();
-
+    var encoder = new json_transform.stream();
     var query = connection.query('SELECT * FROM ' + source + ' LIMIT ' + offset);
     var query_stream = query.stream();
     query_stream.pipe(encoder).pipe(arangoimp.stdin);
