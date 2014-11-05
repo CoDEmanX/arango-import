@@ -24,10 +24,5 @@
     "arango": "^1.2.2",
     "async": "^0.9.0",
     "mysql": "^2.5.2"
-  },
-  "files": [
-    "array_buffer.js",
-    "stream_array_buffer.js",
-    "stream_str_concat.js"
-  ]
+  }
 }
